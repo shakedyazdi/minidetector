@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:13
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "detector" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    environment:
+      - POSTGRES_USER=detector
+      - POSTGRES_PASSWORD=demo
+      - POSTGRES_DB=minidetector
+    ports:
+      - 5432:5432
+  minidetector:
+    build: .
+    depends_on:
+    - "db"
+  web:
+    build: ./web
+    ports:
+      - 8000:8000
+    depends_on:
+    - "db"

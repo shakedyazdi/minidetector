@@ -2,7 +2,7 @@
 import argparse
 import threading
 import logging
-
+from datetime import datetime
 from scapy.all import sniff, Ether, IP
 from .database import create_tables, Entity, create_session, drop_tables
 from queue import Queue
@@ -27,9 +27,13 @@ def process_data():
         session = create_session()
         query = session.query(Entity).filter_by(mac=mac, ip=ip)
         if query.count() > 0:
-            logging.debug(f'skipping packet {ip} {mac}')
+            entity = query.first()
+            entity.last_seen = datetime.now()
+            session.commit()
+            logging.debug(f"Updated last_seen column for {ip} {mac}")
+            session.close()
             continue
-        entity = Entity(mac=mac, ip=ip)
+        entity = Entity(mac=mac, ip=ip, last_seen=datetime.now())
         session.add(entity)
         session.commit()
         logging.info(f'Added entity {entity}')
